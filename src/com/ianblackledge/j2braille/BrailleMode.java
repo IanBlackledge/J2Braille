@@ -5,5 +5,7 @@ enum BrailleMode {
     NUMBER,
     SHIFT,
     CAPS,
-    SPECIAL
+    SPECIAL,
+    SPECIAL_START,
+    SPECIAL_END
 }

@@ -9,26 +9,85 @@ class Braille {
         this.cha = cha;
     }
 
-    char getBraille(BrailleMode mode) {
-        if (mode == BrailleMode.NORMAL) {
-            return brailleAZ[this.cha - 'a'];
-        } else if (mode == BrailleMode.CAPS || mode == BrailleMode.SHIFT) {
-            return brailleAZ[this.cha - 'A'];
-        } else if (mode == BrailleMode.NUMBER) {
-            return brailleNum[this.cha - '0'];
-        } else if (mode == BrailleMode.SPECIAL) {
-            if (this.cha == ' ') {
-                return '\u2800';
-            } else if (this.cha == '.') {
-                return '\u2832';
-            } else if (this.cha == '!') {
-                return '\u2816';
-            } else if (this.cha == '?') {
-                return '\u2826';
-            } else if (this.cha == ',') {
-                return '\u2802';
-            }
+    String getBraille(BrailleMode mode) {
+        char cha = this.cha;
+        String str = "";
+
+        switch (mode) {
+            case NORMAL:
+                cha = brailleAZ[this.cha - 'a'];
+                break;
+            case SHIFT:
+            case CAPS:
+                cha = brailleAZ[this.cha - 'A'];
+                break;
+            case NUMBER:
+                cha = brailleNum[this.cha - '0'];
+                break;
+            case SPECIAL:
+                switch (this.cha) {
+                    case ' ':
+                        cha = '\u2800';
+                        break;
+                    case '.':
+                        cha = '\u2832';
+                        break;
+                    case '!':
+                        cha = '\u2816';
+                        break;
+                    case '?':
+                        cha = '\u2826';
+                        break;
+                    case ',':
+                        cha = '\u2802';
+                        break;
+                    case '\'':
+                        cha = '\u2804';
+                        break;
+                    case '@':
+                        str = "\u2808\u2801";
+                        break;
+                }
+                break;
+            case SPECIAL_START:
+                switch (this.cha) {
+                    case '"':
+                        cha = '\u2826';
+                        break;
+                    case '(':
+                        str = "\u2810\u2823";
+                        break;
+                    case '{':
+                        str = "\u2838\u2823";
+                        break;
+                    case '[':
+                        str = "\u2828\u2823";
+                        break;
+                    case '<':
+                        str = "\u2808\u2823";
+                        break;
+                }
+                break;
+            case SPECIAL_END:
+                switch (this.cha) {
+                    case '"':
+                        cha = '\u2834';
+                        break;
+                    case ')':
+                        str = "\u2810\u281c";
+                        break;
+                    case '}':
+                        str = "\u2838\u281c";
+                        break;
+                    case ']':
+                        str = "\u2828\u281c";
+                        break;
+                    case '>':
+                        str = "\u2808\u281c";
+                        break;
+                }
+                break;
         }
-        return this.cha;
+        return str.isEmpty() ? String.valueOf(cha) : str;
     }
 }
