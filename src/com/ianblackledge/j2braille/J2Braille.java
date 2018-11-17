@@ -1,5 +1,8 @@
 package com.ianblackledge.j2braille;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class J2Braille {
     private static char brailleStart = '\u2800';
     private static char brailleEnd = '\u28FF';
@@ -7,6 +10,8 @@ public class J2Braille {
     private static char prefixAntiUpper = '\u2804';
     private static char prefixNumber = '\u283C';
     private static char prefixAntiNumber = '\u2830';
+    private static List<Character> specialStarts = Arrays.asList('"', '(', '{', '[', '<');
+    private static List<Character> specialEnds = Arrays.asList('"', ')', '}', ']', '>');
 
     public static String toBraille(String english) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -14,6 +19,7 @@ public class J2Braille {
         BrailleMode[] modes = new BrailleMode[chars.length];
 
         //First, process the modes of the whole string
+        boolean mod = false;
         int index = 0;
         for (char cha : chars) {
             if (cha >= 'a' && cha <= 'z') {
@@ -32,6 +38,12 @@ public class J2Braille {
                 }
             } else if (cha >= '0' && cha <= '9') {
                 modes[index] = BrailleMode.NUMBER;
+            } else if (!mod && specialStarts.contains(cha)) {
+                mod = true;
+                modes[index] = BrailleMode.SPECIAL_START;
+            } else if (mod && specialEnds.contains(cha)) {
+                mod = false;
+                modes[index] = BrailleMode.SPECIAL_END;
             } else {
                 modes[index] = BrailleMode.SPECIAL;
             }
@@ -39,53 +51,68 @@ public class J2Braille {
         }
 
         //Next, process and build the braille string
+        mod = false;
         index = 0;
         for (BrailleMode mode : modes) {
-            switch (mode) {
-                case NORMAL:
-                    if (index > 0) {
+            if (mode == BrailleMode.NORMAL) {
+
+                if (index > 0) {
+                    if (modes[index - 1] == BrailleMode.CAPS) {
+                        stringBuilder.append(prefixUpper).append(prefixAntiUpper);
+                    } else if (modes[index - 1] == BrailleMode.NUMBER) {
+                        stringBuilder.append(prefixAntiNumber);
+                    }
+                }
+
+            } else if (mode == BrailleMode.SHIFT) {
+
+                stringBuilder.append(prefixUpper);
+
+            } else if (mode == BrailleMode.CAPS) {
+
+                if (index > 0) {
+                    if (modes[index - 1] != BrailleMode.CAPS) {
+                        stringBuilder.append(prefixUpper).append(prefixUpper);
+                    } else if (modes[index - 1] == BrailleMode.NUMBER) {
+                        stringBuilder.append(prefixAntiNumber);
+                    }
+                } else {
+                    stringBuilder.append(prefixUpper).append(prefixUpper);
+                }
+
+            } else if (mode == BrailleMode.NUMBER) {
+
+                if (index > 0) {
+                    if (modes[index - 1] != BrailleMode.NUMBER) {
                         if (modes[index - 1] == BrailleMode.CAPS) {
                             stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                        } else if (modes[index - 1] == BrailleMode.NUMBER) {
-                            stringBuilder.append(prefixAntiNumber);
                         }
-                    }
-
-                    break;
-                case SHIFT:
-                    stringBuilder.append(prefixUpper);
-
-                    break;
-                case CAPS:
-                    if (index > 0) {
-                        if (modes[index - 1] != BrailleMode.CAPS) {
-                            stringBuilder.append(prefixUpper).append(prefixUpper);
-                        } else if (modes[index - 1] == BrailleMode.NUMBER) {
-                            stringBuilder.append(prefixAntiNumber);
-                        }
-                    } else {
-                        stringBuilder.append(prefixUpper).append(prefixUpper);
-                    }
-
-                    break;
-                case NUMBER:
-                    if (index > 0) {
-                        if (modes[index - 1] != BrailleMode.NUMBER) {
-                            if (modes[index - 1] == BrailleMode.CAPS) {
-                                stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                            }
-                            stringBuilder.append(prefixNumber);
-                        }
-                    } else {
                         stringBuilder.append(prefixNumber);
                     }
+                } else {
+                    stringBuilder.append(prefixNumber);
+                }
 
-                    break;
-                case SPECIAL:
-                    if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
-                        stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                    }
-                    break;
+            } else if (mode == BrailleMode.SPECIAL) {
+
+                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
+                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
+                }
+
+            } else if (!mod && mode == BrailleMode.SPECIAL_START) {
+
+                mod = true;
+                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
+                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
+                }
+
+            } else if (mod && mode == BrailleMode.SPECIAL_END) {
+
+                mod = false;
+                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
+                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
+                }
+
             }
             stringBuilder.append(new Braille(chars[index]).getBraille(mode));
             index++;
