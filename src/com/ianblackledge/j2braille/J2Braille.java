@@ -63,7 +63,7 @@ public class J2Braille {
                     mode = BrailleMode.UPPERCASE_SHIFT;
                 }
             } else if (cha == '"') {
-                // Quotation processing TODO: Handle single quotation marks
+                // Quotation processing
                 if (!quote) {
                     // If we're not in a quotation, start one
                     mode = BrailleMode.QUOTE_START;
@@ -94,6 +94,11 @@ public class J2Braille {
             if (needsUnNumber) brailleBuilder.append(unNumber);
 
             index++;
+        }
+
+        // Handle single quotation marks
+        if (quote) {
+            brailleBuilder.replace(brailleBuilder.lastIndexOf("\u2826"), brailleBuilder.lastIndexOf("\u2826") + 1, "\u2820\u2836");
         }
 
         return brailleBuilder.toString();
