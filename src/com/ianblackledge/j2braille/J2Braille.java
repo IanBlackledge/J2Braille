@@ -30,13 +30,16 @@ public class J2Braille {
 
             // Mode processing, feels sloppy
             if (Character.isDigit(cha)) {
+                // Prefix processing
+                if (!Character.isDigit(prev)) {
+                    // If we're entering number mode, add a prefix
+                    needsNumber = true;
+                }
                 // Postfix processing
-                if (!Character.isDigit(next) && !Character.isSpaceChar(next) && Character.isLowerCase(next)) {
-                    // Only add a postfix if the next character is a lowercase letter and not a space
+                if (next != '\u0000' && !Character.isDigit(next) && !Character.isSpaceChar(next) && Character.isLowerCase(next) && next > 'a' && next < 'j') {
+                    // Only add a postfix if the next character isn't a number, isn't a space, is lowercase, and can be interpreted as a Braille number
                     needsUnNumber = true;
                 }
-                // Numbers always need a prefix
-                needsNumber = true;
                 mode = BrailleMode.NUMBER;
             } else if (Character.isLowerCase(cha)) {
                 // Lowercase
