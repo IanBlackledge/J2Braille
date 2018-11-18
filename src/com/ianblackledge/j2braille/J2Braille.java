@@ -17,7 +17,7 @@ public class J2Braille {
         boolean quote = false;
         int index = 0;
         for (char cha : chars) {
-            // Feels sloppy, but prevents odd situations
+            // Feels sloppy to put these in the loop, but it prevents odd situations
             boolean needsShift = false;
             boolean needsCaps = false;
             boolean needsUnCaps = false;
@@ -96,7 +96,7 @@ public class J2Braille {
             index++;
         }
 
-        // Handle single quotation marks
+        // Handle single quotation marks, kind of
         if (quote) {
             brailleBuilder.replace(brailleBuilder.lastIndexOf("\u2826"), brailleBuilder.lastIndexOf("\u2826") + 1, "\u2820\u2836");
         }
@@ -105,8 +105,9 @@ public class J2Braille {
     }
 
     public static String toEnglish(String braille) {
+        // Make sure there's actually any Braille characters in the string before processing
         if (hasBraille(braille)) {
-            // TODO: Do this!
+
         }
         return braille;
     }
@@ -117,7 +118,7 @@ public class J2Braille {
 
     public static boolean hasBraille(char[] braille) {
         for (char each : braille) {
-            if (each >= brailleStart && each <= brailleEnd) {
+            if (isBraille(each)) {
                 return true;
             }
         }
