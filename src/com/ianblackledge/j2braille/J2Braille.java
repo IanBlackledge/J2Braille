@@ -1,129 +1,104 @@
 package com.ianblackledge.j2braille;
 
-import java.util.Arrays;
-import java.util.List;
-
 public class J2Braille {
     private static char brailleStart = '\u2800';
     private static char brailleEnd = '\u28FF';
-    private static char prefixUpper = '\u2820';
-    private static char prefixAntiUpper = '\u2804';
-    private static char prefixNumber = '\u283C';
-    private static char prefixAntiNumber = '\u2830';
-    private static List<Character> specialStarts = Arrays.asList('"', '(', '{', '[', '<');
-    private static List<Character> specialEnds = Arrays.asList('"', ')', '}', ']', '>');
+    private static char shift = '\u2820';
+    private static String caps = "\u2820\u2820";
+    private static String unCaps = "\u2820\u2804";
+    private static char number = '\u283C';
+    private static char unNumber = '\u2830';
 
     public static String toBraille(String english) {
-        StringBuilder stringBuilder = new StringBuilder();
-        char[] chars = english.toCharArray();
-        BrailleMode[] modes = new BrailleMode[chars.length];
+        StringBuilder brailleBuilder = new StringBuilder();
 
-        //First, process the modes of the whole string
-        boolean mod = false;
+        char[] chars = english.toCharArray();
+        BrailleMode mode;
+        boolean quote = false;
         int index = 0;
         for (char cha : chars) {
-            if (cha >= 'a' && cha <= 'z') {
-                modes[index] = BrailleMode.NORMAL;
-            } else if (cha >= 'A' && cha <= 'Z') {
-                //If caps, modify previous in array
-                if (index > 0 && modes[index - 1] == BrailleMode.SHIFT) {
-                    modes[index - 1] = BrailleMode.CAPS;
-                }
+            // Feels sloppy, but prevents odd situations
+            boolean needsShift = false;
+            boolean needsCaps = false;
+            boolean needsUnCaps = false;
+            boolean needsNumber = false;
+            boolean needsUnNumber = false;
 
-                //If caps then keep it that way, otherwise shift
-                if (index > 0 && modes[index - 1] == BrailleMode.CAPS) {
-                    modes[index] = BrailleMode.CAPS;
-                } else {
-                    modes[index] = BrailleMode.SHIFT;
+            // Next and previous characters relative to current character; ArrayIndexOutOfBoundsException-proof
+            char next = index < chars.length - 1 ? chars[index + 1] : '\u0000';
+            char prev = index > 0 ? chars[index - 1] : '\u0000';
+
+            // Mode processing, feels sloppy
+            if (Character.isDigit(cha)) {
+                // Postfix processing
+                if (!Character.isDigit(next) && !Character.isSpaceChar(next) && Character.isLowerCase(next)) {
+                    // Only add a postfix if the next character is a lowercase letter and not a space
+                    needsUnNumber = true;
                 }
-            } else if (cha >= '0' && cha <= '9') {
-                modes[index] = BrailleMode.NUMBER;
-            } else if (!mod && specialStarts.contains(cha)) {
-                mod = true;
-                modes[index] = BrailleMode.SPECIAL_START;
-            } else if (mod && specialEnds.contains(cha)) {
-                mod = false;
-                modes[index] = BrailleMode.SPECIAL_END;
+                // Numbers always need a prefix
+                needsNumber = true;
+                mode = BrailleMode.NUMBER;
+            } else if (Character.isLowerCase(cha)) {
+                // Lowercase
+                mode = BrailleMode.LOWERCASE;
+            } else if (Character.isUpperCase(cha)) {
+                // Caps or shift processing
+                if (Character.isUpperCase(next) || Character.isUpperCase(prev)) {
+                    // Prefix and postfix processing
+                    if (!Character.isUpperCase(prev)) {
+                        // If we're entering caps mode, add a prefix
+                        needsCaps = true;
+                    } else if (!Character.isUpperCase(next) && !Character.isSpaceChar(next)) {
+                        // If we're exiting caps mode and the next character isn't a space, add a postfix
+                        needsUnCaps = true;
+                    }
+                    // Caps, regardless of prefix or postfix
+                    mode = BrailleMode.UPPERCASE_CAPS;
+                } else {
+                    // Shift, if neither of the surrounding characters are also uppercase
+                    needsShift = true;
+                    mode = BrailleMode.UPPERCASE_SHIFT;
+                }
+            } else if (cha == '"') {
+                // Quotation processing TODO: Handle single quotation marks
+                if (!quote) {
+                    // If we're not in a quotation, start one
+                    mode = BrailleMode.QUOTE_START;
+                    quote = true;
+                } else {
+                    // End a quotation if we're in one
+                    mode = BrailleMode.QUOTE_END;
+                    quote = false;
+                }
+            } else if (Character.isSpaceChar(cha)) {
+                // Spaces are unique as they negate the need for postfixes
+                mode = BrailleMode.SPACE;
             } else {
-                modes[index] = BrailleMode.SPECIAL;
+                // Wildcard, basically
+                mode = BrailleMode.SPECIAL;
             }
+
+            // Handle prefixes
+            if (needsShift) brailleBuilder.append(shift);
+            if (needsCaps) brailleBuilder.append(caps);
+            if (needsNumber) brailleBuilder.append(number);
+
+            // Main string building
+            brailleBuilder.append(new Braille(cha).getBraille(mode));
+
+            // Handle postfixes
+            if (needsUnCaps) brailleBuilder.append(unCaps);
+            if (needsUnNumber) brailleBuilder.append(unNumber);
+
             index++;
         }
 
-        //Next, process and build the braille string
-        mod = false;
-        index = 0;
-        for (BrailleMode mode : modes) {
-            if (mode == BrailleMode.NORMAL) {
-
-                if (index > 0) {
-                    if (modes[index - 1] == BrailleMode.CAPS) {
-                        stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                    } else if (modes[index - 1] == BrailleMode.NUMBER) {
-                        stringBuilder.append(prefixAntiNumber);
-                    }
-                }
-
-            } else if (mode == BrailleMode.SHIFT) {
-
-                stringBuilder.append(prefixUpper);
-
-            } else if (mode == BrailleMode.CAPS) {
-
-                if (index > 0) {
-                    if (modes[index - 1] != BrailleMode.CAPS) {
-                        stringBuilder.append(prefixUpper).append(prefixUpper);
-                    } else if (modes[index - 1] == BrailleMode.NUMBER) {
-                        stringBuilder.append(prefixAntiNumber);
-                    }
-                } else {
-                    stringBuilder.append(prefixUpper).append(prefixUpper);
-                }
-
-            } else if (mode == BrailleMode.NUMBER) {
-
-                if (index > 0) {
-                    if (modes[index - 1] != BrailleMode.NUMBER) {
-                        if (modes[index - 1] == BrailleMode.CAPS) {
-                            stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                        }
-                        stringBuilder.append(prefixNumber);
-                    }
-                } else {
-                    stringBuilder.append(prefixNumber);
-                }
-
-            } else if (mode == BrailleMode.SPECIAL) {
-
-                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
-                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                }
-
-            } else if (!mod && mode == BrailleMode.SPECIAL_START) {
-
-                mod = true;
-                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
-                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                }
-
-            } else if (mod && mode == BrailleMode.SPECIAL_END) {
-
-                mod = false;
-                if (index > 0 && modes[index - 1] == BrailleMode.CAPS && chars[index] != ' ') {
-                    stringBuilder.append(prefixUpper).append(prefixAntiUpper);
-                }
-
-            }
-            stringBuilder.append(new Braille(chars[index]).getBraille(mode));
-            index++;
-        }
-
-        return stringBuilder.toString();
+        return brailleBuilder.toString();
     }
 
     public static String toEnglish(String braille) {
         if (hasBraille(braille)) {
-            //TODO: Do this!
+            // TODO: Do this!
         }
         return braille;
     }

@@ -10,84 +10,77 @@ class Braille {
     }
 
     String getBraille(BrailleMode mode) {
-        char cha = this.cha;
-        String str = "";
+        String braille = "";
 
+        // Decide the character(s) to return
         switch (mode) {
-            case NORMAL:
-                cha = brailleAZ[this.cha - 'a'];
+            case LOWERCASE:
+                braille = String.valueOf(brailleAZ[this.cha - 'a']);
                 break;
-            case SHIFT:
-            case CAPS:
-                cha = brailleAZ[this.cha - 'A'];
+            case UPPERCASE_SHIFT:
+            case UPPERCASE_CAPS:
+                braille = String.valueOf(brailleAZ[this.cha - 'A']);
                 break;
             case NUMBER:
-                cha = brailleNum[this.cha - '0'];
+                braille = String.valueOf(brailleNum[this.cha - '0']);
+                break;
+            case SPACE:
+                braille = "\u2800";
                 break;
             case SPECIAL:
                 switch (this.cha) {
-                    case ' ':
-                        cha = '\u2800';
-                        break;
                     case '.':
-                        cha = '\u2832';
+                        braille = "\u2832";
                         break;
                     case '!':
-                        cha = '\u2816';
+                        braille = "\u2816";
                         break;
                     case '?':
-                        cha = '\u2826';
+                        braille = "\u2826";
                         break;
                     case ',':
-                        cha = '\u2802';
+                        braille = "\u2802";
                         break;
                     case '\'':
-                        cha = '\u2804';
+                        braille = "\u2804";
                         break;
                     case '@':
-                        str = "\u2808\u2801";
-                        break;
-                }
-                break;
-            case SPECIAL_START:
-                switch (this.cha) {
-                    case '"':
-                        cha = '\u2826';
+                        braille = "\u2808\u2801";
                         break;
                     case '(':
-                        str = "\u2810\u2823";
+                        braille = "\u2810\u2823";
                         break;
                     case '{':
-                        str = "\u2838\u2823";
+                        braille = "\u2838\u2823";
                         break;
                     case '[':
-                        str = "\u2828\u2823";
+                        braille = "\u2828\u2823";
                         break;
                     case '<':
-                        str = "\u2808\u2823";
-                        break;
-                }
-                break;
-            case SPECIAL_END:
-                switch (this.cha) {
-                    case '"':
-                        cha = '\u2834';
+                        braille = "\u2808\u2823";
                         break;
                     case ')':
-                        str = "\u2810\u281c";
+                        braille = "\u2810\u281c";
                         break;
                     case '}':
-                        str = "\u2838\u281c";
+                        braille = "\u2838\u281c";
                         break;
                     case ']':
-                        str = "\u2828\u281c";
+                        braille = "\u2828\u281c";
                         break;
                     case '>':
-                        str = "\u2808\u281c";
+                        braille = "\u2808\u281c";
                         break;
                 }
                 break;
+            case QUOTE_START:
+                if (this.cha == '"') braille = "\u2826";
+                break;
+            case QUOTE_END:
+                if (this.cha == '"') braille = "\u2834";
+                break;
         }
-        return str.isEmpty() ? String.valueOf(cha) : str;
+
+        return braille;
     }
 }

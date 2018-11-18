@@ -1,11 +1,12 @@
 package com.ianblackledge.j2braille;
 
 enum BrailleMode {
-    NORMAL,
+    LOWERCASE,
     NUMBER,
-    SHIFT,
-    CAPS,
+    UPPERCASE_SHIFT,
+    UPPERCASE_CAPS,
+    SPACE,
     SPECIAL,
-    SPECIAL_START,
-    SPECIAL_END
+    QUOTE_START,
+    QUOTE_END
 }
