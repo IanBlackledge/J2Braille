@@ -1,5 +1,7 @@
 package com.ianblackledge.j2braille;
 
+import java.util.Arrays;
+
 public class J2Braille {
     private static char brailleStart = '\u2800';
     private static char brailleEnd = '\u28FF';
@@ -105,10 +107,114 @@ public class J2Braille {
     }
 
     public static String toEnglish(String braille) {
-        // Make sure there's actually any Braille characters in the string before processing
-        if (hasBraille(braille)) {
+        char[] chars = braille.toCharArray();
 
+        // Make sure there's actually any Braille characters in the string before processing
+        if (hasBraille(chars)) {
+            StringBuilder englishBuilder = new StringBuilder();
+
+            BrailleMode mode;
+            boolean doShift = false;
+            boolean doCaps = false;
+            boolean doNumbers = false;
+            boolean longSpecial;
+            int index = 0;
+            for (char cha : chars) {
+                // Next and previous characters relative to current character; ArrayIndexOutOfBoundsException-proof
+                char next = index < chars.length - 1 ? chars[index + 1] : '\u0000';
+                char prev = index > 0 ? chars[index - 1] : '\u0000';
+
+                // Check to see if this is a long special char
+                if (Arrays.asList(Braille.brailleSpecial).indexOf(String.valueOf(cha) + next) != -1) {
+                    longSpecial = true;
+                } else if (Arrays.asList(Braille.brailleSpecial).indexOf(String.valueOf(prev) + cha) != -1) {
+                    index++;
+                    continue;
+                } else {
+                    longSpecial = false;
+                }
+
+                // Reset modes
+                if (doShift && prev != shift) {
+                    doShift = false;
+                } else if (doNumbers && (longSpecial || Arrays.asList(Braille.brailleSpecial).indexOf(String.valueOf(cha)) != -1 || Arrays.asList(Braille.brailleAZ).indexOf(String.valueOf(cha)) > Arrays.asList(Braille.brailleAZ).indexOf("\u281a"))) {
+                    doNumbers = false;
+                }
+
+                // Determines mode and drops mode-changing characters
+                if ((String.valueOf(cha) + String.valueOf(prev)).equals(caps)) {
+                    doShift = false;
+                    doCaps = true;
+                    doNumbers = false;
+                    index++;
+                    continue;
+                } else if (cha == shift && next != '\u2836') {
+                    doShift = true;
+                    doCaps = false;
+                    doNumbers = false;
+                    index++;
+                    continue;
+                } else if (cha == unCaps.charAt(1) && prev == unCaps.charAt(0)) {
+                    doShift = false;
+                    doCaps = false;
+                    doNumbers = false;
+                    index++;
+                    continue;
+                } else if (cha == number) {
+                    doShift = false;
+                    doCaps = false;
+                    doNumbers = true;
+                    index++;
+                    continue;
+                } else if (cha == unNumber) {
+                    doShift = false;
+                    doCaps = false;
+                    doNumbers = false;
+                    index++;
+                    continue;
+                }
+
+                if (doShift) {
+                    mode = BrailleMode.UPPERCASE_SHIFT;
+                } else if (doCaps) {
+                    mode = BrailleMode.UPPERCASE_CAPS;
+                } else if (doNumbers) {
+                    mode = BrailleMode.NUMBER;
+                } else {
+                    mode = BrailleMode.LOWERCASE;
+                }
+
+                // A pretty hacky solution to the quote/question mark issue
+                if (!longSpecial) {
+                    if (cha == '\u2826') {
+                        // Do stuff if the previous char is a space
+                        if (Character.isSpaceChar(prev) || prev == '\u0000' || prev == '\u2800') {
+                            cha = '\u2820';
+                            next = '\u2836';
+                            longSpecial = true;
+                        }
+                    } else if (cha == '\u2834') {
+                        cha = '\u2820';
+                        next = '\u2836';
+                        longSpecial = true;
+                    }
+
+                }
+
+                if (!longSpecial) {
+                    englishBuilder.append(new Braille(cha).getEnglish(mode));
+                } else {
+                    englishBuilder.append(new Braille(String.valueOf(cha) + next).getEnglish(mode));
+                }
+
+                index++;
+            }
+
+            // Return the completed string
+            return englishBuilder.toString();
         }
+
+        // Return the original string if no Braille characters are present.
         return braille;
     }
 
