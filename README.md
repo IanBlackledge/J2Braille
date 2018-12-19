@@ -1,4 +1,4 @@
-
+![J2Braille](https://github.com/ianblackledge/J2Braille/blob/master/j2braille.png)
 # J2Braille ![Grade 1 In Progress](https://img.shields.io/badge/grade%201-functional-green.svg) ![Grade 2 Not Started](https://img.shields.io/badge/grade%202-not%20started-red.svg)
 A Java library that translates English strings into Braille.
 
